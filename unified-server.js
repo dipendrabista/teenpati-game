@@ -652,20 +652,29 @@ class TeenPatiGame {
   handleSideShow(challenger, targetPlayerId) {
     const targetPlayer = this.getPlayer(targetPlayerId);
 
+    console.log(`🎭 Side show requested by ${challenger.name} against ${targetPlayer?.name || 'unknown'}`);
+    console.log(`   Active players: ${this.players.filter(p => p.isActive && !p.hasFolded).map(p => `${p.name}(seen:${p.hasSeen})`).join(', ')}`);
+
     if (!targetPlayer || !targetPlayer.isActive || targetPlayer.hasFolded) {
+      console.log(`   ❌ Invalid target: active=${targetPlayer?.isActive}, folded=${targetPlayer?.hasFolded}`);
       throw new Error('Invalid side show target');
     }
 
     const activePlayers = this.players.filter(p => p.isActive && !p.hasFolded);
     if (activePlayers.length <= 2) {
+      console.log(`   ❌ Not enough players: ${activePlayers.length} active (need 3+)`);
       throw new Error('Side show requires at least 3 active players');
     }
     if (!challenger.hasSeen) {
+      console.log(`   ❌ Challenger hasn't seen cards yet`);
       throw new Error('Challenger must be seen to request side show');
     }
     if (!targetPlayer.hasSeen) {
+      console.log(`   ❌ Target hasn't seen cards yet`);
       throw new Error('Side show target must be seen');
     }
+
+    console.log(`   ✅ Side show validation passed`);
 
     // Create side show challenge
     this.sideShowChallenge = {
