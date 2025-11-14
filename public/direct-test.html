@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Direct Socket Test</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: #000;
+            color: #0f0;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 { color: #ff0; }
+        button {
+            background: #0f0;
+            color: #000;
+            border: none;
+            padding: 15px 30px;
+            margin: 10px 5px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+        }
+        button:hover { background: #0ff; }
+        input {
+            padding: 10px;
+            margin: 5px;
+            background: #111;
+            color: #0f0;
+            border: 1px solid #0f0;
+            width: 300px;
+        }
+        .log {
+            background: #111;
+            padding: 15px;
+            margin: 20px 0;
+            border: 1px solid #0f0;
+            min-height: 400px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+        .info { color: #0ff; }
+    </style>
+</head>
+<body>
+    <h1>🔧 DIRECT SOCKET NUDGE TEST</h1>
+    
+    <div style="background: #222; padding: 15px; margin: 20px 0;">
+        <h3>Setup:</h3>
+        <div>
+            <input type="text" id="gameId" placeholder="Game ID" value="test-nudge-direct">
+        </div>
+        <div>
+            <input type="text" id="senderId" placeholder="Sender ID" value="player-sender">
+            <input type="text" id="senderName" placeholder="Sender Name" value="Dipendra">
+        </div>
+        <div>
+            <input type="text" id="receiverId" placeholder="Receiver ID" value="player-receiver">
+            <input type="text" id="receiverName" placeholder="Receiver Name" value="Manish">
+        </div>
+    </div>
+
+    <div>
+        <button onclick="connectSender()">1. Connect Sender</button>
+        <button onclick="connectReceiver()">2. Connect Receiver</button>
+        <button onclick="joinBoth()">3. Join Both to Game</button>
+        <button onclick="sendNudge()">4. Send Nudge</button>
+        <button onclick="clearLog()">Clear Log</button>
+    </div>
+
+    <div class="log" id="log"></div>
+
+    <script>
+        let senderSocket = null;
+        let receiverSocket = null;
+
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('log');
+            const time = new Date().toLocaleTimeString();
+            const entry = document.createElement('div');
+            entry.className = type;
+            entry.textContent = `[${time}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+
+        function connectSender() {
+            log('📡 Connecting sender socket...', 'warning');
+            senderSocket = io('http://localhost:3000');
+
+            senderSocket.on('connect', () => {
+                log('✅ SENDER CONNECTED: ' + senderSocket.id, 'success');
+            });
+
+            senderSocket.on('disconnect', () => {
+                log('❌ SENDER DISCONNECTED', 'error');
+            });
+
+            senderSocket.on('error', (err) => {
+                log('❌ SENDER ERROR: ' + err.message, 'error');
+            });
+        }
+
+        function connectReceiver() {
+            log('📡 Connecting receiver socket...', 'warning');
+            receiverSocket = io('http://localhost:3000');
+
+            receiverSocket.on('connect', () => {
+                log('✅ RECEIVER CONNECTED: ' + receiverSocket.id, 'success');
+            });
+
+            receiverSocket.on('disconnect', () => {
+                log('❌ RECEIVER DISCONNECTED', 'error');
+            });
+
+            receiverSocket.on('error', (err) => {
+                log('❌ RECEIVER ERROR: ' + err.message, 'error');
+            });
+
+            // CRITICAL: Listen for nudge
+            receiverSocket.on('player_nudged', (data) => {
+                log('🔔🔔🔔 RECEIVER GOT NUDGE! 🔔🔔🔔', 'success');
+                log('  From: ' + data.fromName + ' (' + data.from + ')', 'success');
+                log('  To: ' + data.to, 'success');
+                alert('🔔 NUDGE RECEIVED!\nFrom: ' + data.fromName + '\nTo: ' + data.to);
+            });
+        }
+
+        function joinBoth() {
+            const gameId = document.getElementById('gameId').value;
+            const senderId = document.getElementById('senderId').value;
+            const senderName = document.getElementById('senderName').value;
+            const receiverId = document.getElementById('receiverId').value;
+            const receiverName = document.getElementById('receiverName').value;
+
+            if (!senderSocket || !receiverSocket) {
+                log('❌ Connect both sockets first!', 'error');
+                return;
+            }
+
+            log('📥 Joining sender to game...', 'warning');
+            senderSocket.emit('join_game', {
+                gameId: gameId,
+                playerId: senderId,
+                playerName: senderName
+            });
+
+            log('📥 Joining receiver to game...', 'warning');
+            receiverSocket.emit('join_game', {
+                gameId: gameId,
+                playerId: receiverId,
+                playerName: receiverName
+            });
+
+            setTimeout(() => {
+                log('✅ Both should be joined now', 'success');
+            }, 1000);
+        }
+
+        function sendNudge() {
+            const gameId = document.getElementById('gameId').value;
+            const senderId = document.getElementById('senderId').value;
+            const senderName = document.getElementById('senderName').value;
+            const receiverId = document.getElementById('receiverId').value;
+
+            if (!senderSocket) {
+                log('❌ Connect sender first!', 'error');
+                return;
+            }
+
+            log('👋 Sending nudge...', 'warning');
+            log('  Game: ' + gameId, 'info');
+            log('  From: ' + senderName + ' (' + senderId + ')', 'info');
+            log('  To: ' + receiverId, 'info');
+
+            senderSocket.emit('nudge_player', {
+                gameId: gameId,
+                from: senderId,
+                fromName: senderName,
+                to: receiverId
+            });
+
+            log('✅ Nudge sent! Check receiver console...', 'success');
+        }
+
+        // Auto-start
+        window.addEventListener('load', () => {
+            log('🚀 Direct Socket Test Ready', 'success');
+            log('Click buttons in order: 1 → 2 → 3 → 4', 'warning');
+        });
+    </script>
+</body>
+</html>
+

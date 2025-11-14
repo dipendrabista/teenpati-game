@@ -1,0 +1,390 @@
+import React, { createContext, useContext, useMemo, type ReactNode } from 'react';
+
+export type Locale = 'en' | 'ne';
+
+type Dictionary = Record<string, string>;
+
+const en: Dictionary = {
+  'action.call': 'Call',
+  'action.fold': 'Fold',
+  'action.raise': 'Raise',
+  'action.show': 'Show Cards',
+  'action.blindShow': 'Blind Show',
+  'action.min': 'Min',
+  'action.allIn': 'All-in',
+  'turnTimer.yourTurn': 'Your Turn',
+  'turnTimer.hurry': 'Hurry!',
+  'turnTimer.autoFold': 'You will be auto-folded!',
+  'turnTimer.timedOut': 'Time out! Auto-folded.',
+  'quickBets.title': 'Quick Bets',
+  'quickBets.edit': 'Edit',
+  'presets.editorTitle': 'Raise presets (multipliers)',
+  'presets.example': 'Example: 2,4,6 (range 1–10)',
+  'common.cancel': 'Cancel',
+  'common.save': 'Save',
+  'haptics.title': 'Haptics',
+  'reconnect.banner': 'Reconnecting in {n}s…',
+  'reconnect.retry': 'Retry now',
+  'perf.modeEnabled': 'Performance mode enabled',
+  'recap.title': 'Recap',
+  'recap.pot': 'Pot',
+  'recap.winner': 'Winner',
+  'rematch.start': 'Start Rematch',
+  'rematch.in': 'Rematch in {n}s',
+  'toast.called': 'Called {n} chips',
+  'toast.raisedTo': 'Raised to {n} chips!',
+  'toast.folded': 'You folded',
+  'toast.minRaise': 'Minimum raise is {n}. Try 2X/4X or use Max.',
+  'toast.maxSet': 'Set to your maximum chips. Consider ALL-in.',
+  'ui.quickRaise': 'Quick raise',
+  'ui.confirmFold': 'Confirm fold?',
+  'ui.toCall': 'To call',
+  'ui.left': 'left',
+  'shortcuts.inline': 'Shortcuts:\\n/ focus chat\\nEnter send\\nShift+Enter newline',
+  'call.banner': 'Group call in progress',
+  'chat.placeholder': 'Type a message…',
+  'chat.send': 'Send',
+  'chat.cooldown': 'Please wait before sending another message',
+  'header.density': 'Density',
+  'header.leftHanded': 'Left-handed',
+  'header.shortcuts': 'Shortcuts',
+  'header.spectators': 'Spectators',
+  'button.spectators': 'Spectators',
+  'button.settings': 'Settings',
+  'button.startGame': 'Start Game',
+  'common.close': 'Close',
+  'common.copy': 'Copy',
+  'common.copied': 'Copied',
+  
+  'settings.title': 'Table Settings',
+  'settings.tableName': 'Table name',
+  'settings.private': 'Private',
+  'settings.spectators': 'Spectators',
+  'settings.variant': 'Variant',
+  'variant.classic': 'Classic',
+  'variant.ak47': 'AK47',
+  'variant.muflis': 'Muflis',
+  'variant.highRoller': 'High Roller',
+  'variant.turbo': 'Turbo',
+  'variant.jokerWild': 'Joker Wild',
+  'settings.maxPlayers': 'Max Players',
+  'settings.bots': 'Bots',
+  'settings.minBet': 'Min Bet',
+  'settings.blindShowAfter': 'Blind Show after',
+  'settings.rounds': 'rounds',
+  'settings.rajkapoor135': 'Rajkapoor 2-3-5',
+  'settings.special910Q': '9-10-Q outranks all',
+  'settings.save': 'Save settings',
+  
+  'spectator.title': 'Spectator Mode',
+  'spectator.privacy': 'Privacy',
+  'spectator.private': 'Private',
+  'spectator.public': 'Public',
+  'spectator.privateTip': 'Currently Private (no spectators)',
+  'spectator.publicTip': 'Currently Public (spectators allowed)',
+  'spectator.watchingNow': 'Watching now',
+  'spectator.limit': 'Spectator limit',
+  'spectator.shareLink': 'Share link',
+  'menu.title': 'Menu',
+  'menu.home': 'Home',
+  'menu.profileStats': 'Profile & Stats',
+  'menu.leaderboard': 'Leaderboard',
+  'menu.howToPlay': 'How to Play',
+  'menu.sound': 'Sound',
+  'menu.soundOn': 'On',
+  'menu.soundOff': 'Off',
+  'menu.theme': 'Theme',
+  'menu.language': 'Language',
+  'menu.leftHanded': 'Left-handed layout',
+  'menu.reduceMotion': 'Reduce motion',
+  'menu.leaveGame': 'Leave Game',
+  'common.back': 'Back',
+  'common.leave': 'Leave',
+  'confirm.leave.title': 'Leave game?',
+  'confirm.leave.body': 'Are you sure you want to leave the game?',
+  'sideshow.noPending': 'No side show is pending.',
+  'sideshow.onlyTwoActive': 'Side show is only available when 2 active players remain.',
+  'sideshow.invalidTarget': 'Side show target is not valid right now.',
+  'sideshow.unavailable': 'Side show not available right now.',
+  'seen.noShowWhileBlind': 'Seen cannot show while blind players remain. Use Side Show.',
+  'mention.youWereMentioned': 'You were mentioned by {name}',
+  'join.playerJoined': '{name} joined the game!',
+  'game.startedGoodLuck': 'Game Started! Good luck!',
+  'youWon': 'You Won {n} chips!',
+  'playerWon': '{name} won this round',
+  'allPlayersReady': 'All players ready!',
+  'roundStarted': 'Round {n} started!',
+  'showingCards': '{name} is showing cards!',
+  'streak.broken': 'Streak broken!',
+  'name.updated': 'Name updated',
+  'leftHanded.enabled': 'Left-handed layout enabled',
+  'leftHanded.disabled': 'Left-handed layout disabled',
+  'density.set': 'Density: {v}',
+  'motion.reduced': 'Motion reduced',
+  'motion.enabled': 'Motion enabled',
+  'oneThumb.set': 'One-thumb: {v}',
+  'privacy.cannotChange': 'Cannot change privacy after game start',
+  'rematch.failed': 'Failed to start rematch',
+  'cards.saw': 'You saw your cards!',
+  'turn.yourTurn': 'Your turn! Make your move',
+  'gesture.called': 'Called!',
+  'gesture.folded': 'Folded',
+  'gesture.raised': 'Raised!',
+  'help.title': 'How to Play',
+  'help.subtitle': 'Teen Pati Guide',
+  'help.gameRules': 'Game Rules',
+  'help.rules.2to3': '2-3 Players: Min 2 players to start',
+  'help.rules.startingChips': 'Starting Chips: 1000 chips each',
+  'help.rules.boot': 'Boot: 10 chips per player',
+  'help.rules.3cards': '3 Cards: Each player gets 3',
+  'help.rules.blind': 'Blind: Pay 50% of bet',
+  'help.rules.seen': 'Seen: Pay 100% of bet',
+  'help.handRankings': 'Hand Rankings',
+  'hand.trail': 'Trail',
+  'hand.pureSequence': 'Pure Sequence',
+  'hand.sequence': 'Sequence',
+  'hand.color': 'Color',
+  'hand.pair': 'Pair',
+  'hand.highCard': 'High Card',
+  'help.actions': 'Actions',
+  'action.seeCards': 'See Cards',
+  'help.proTips': 'Pro Tips',
+  'tips.blindSave': 'Play blind to save chips early',
+  'tips.seeWhenPotLarge': 'See cards when pot is large',
+  'tips.foldBad': 'Fold bad hands early',
+  'tips.raiseStrong': 'Raise with strong hands',
+  'tips.useShow': 'Use Show when confident',
+  'desc.seeCards': 'Reveal your cards (become Seen player)',
+  'desc.call': 'Match the current bet',
+  'desc.raise': 'Increase the bet (2x or 4x)',
+  'desc.fold': 'Give up this round',
+  'desc.show': 'Compare cards (2 players only)',
+};
+
+const ne: Dictionary = {
+  'action.call': 'कल',
+  'action.fold': 'फोल्ड',
+  'action.raise': 'रेज',
+  'action.show': 'कार्ड देखाउनुहोस्',
+  'action.blindShow': 'ब्लाइन्ड शो',
+  'action.min': 'न्यूनतम',
+  'action.allIn': 'अल-इन',
+  'quickBets.title': 'छिटो बेट',
+  'quickBets.edit': 'सम्पादन',
+  'presets.editorTitle': 'रेज प्रिसेटहरू (गुणक)',
+  'presets.example': 'उदाहरण: २,४,६ (१–१० दायरा)',
+  'common.cancel': 'रद्द',
+  'common.save': 'सेभ',
+  'haptics.title': 'ह्याप्टिक्स',
+  'reconnect.banner': '{n} सेकेन्डमा पुन: जडान हुँदै…',
+  'reconnect.retry': 'अहिले पुन: प्रयास',
+  'perf.modeEnabled': 'प्रदर्शन मोड सक्रिय',
+  'recap.title': 'सारांश',
+  'recap.pot': 'पोट',
+  'recap.winner': 'विजेता',
+  'rematch.start': 'रिम्याच सुरु',
+  'rematch.in': '{n} सेकेन्डमा रिम्याच',
+  'toast.called': '{n} चिप्स कल गरियो',
+  'toast.raisedTo': '{n} चिप्ससम्म रेज गरियो!',
+  'toast.folded': 'तपाईंले फोल्ड गर्नुभयो',
+  'toast.minRaise': 'न्यूनतम रेज {n} हो। 2X/4X प्रयास गर्नुहोस् वा Max प्रयोग गर्नुहोस्।',
+  'toast.maxSet': 'तपाईंका अधिकतम चिप्स सेट गरियो। ALL-in विचार गर्नुहोस्।',
+  'ui.quickRaise': 'छिटो रेज',
+  'ui.confirmFold': 'फोल्ड पुष्टि गर्नुहुन्छ?',
+  'ui.toCall': 'कल गर्न',
+  'ui.left': 'बाँकी',
+  'shortcuts.inline': 'सर्टकटहरू:\\n/ च्याट फोकस\\nEnter पठाउने\\nShift+Enter नयाँ लाइन',
+  'call.banner': 'समूह कल चलिरहेको छ',
+  'chat.placeholder': 'सन्देश टाइप गर्नुहोस्…',
+  'chat.send': 'पठाउनुहोस्',
+  'chat.cooldown': 'कृपया अर्को सन्देश पठाउन अघि पर्खनुहोस्',
+  'header.density': 'घनत्व',
+  'header.leftHanded': 'बायाँ हातका लागि',
+  'header.shortcuts': 'सर्टकटहरू',
+  'header.spectators': 'दर्शक',
+  'button.spectators': 'दर्शक',
+  'button.settings': 'सेटिङ्स',
+  'button.startGame': 'खेल सुरु',
+  'common.close': 'बन्द',
+  'common.copy': 'कपी',
+  'common.copied': 'कपी भयो',
+  
+  'settings.title': 'टेबल सेटिङ्स',
+  'settings.tableName': 'टेबलको नाम',
+  'settings.private': 'निजी',
+  'settings.spectators': 'दर्शक',
+  'settings.variant': 'भेरियन्ट',
+  'variant.classic': 'क्लासिक',
+  'variant.ak47': 'AK47',
+  'variant.muflis': 'मुफ्लिस',
+  'variant.highRoller': 'हाइ रोलर',
+  'variant.turbo': 'टर्बो',
+  'variant.jokerWild': 'जोकर वाइल्ड',
+  'settings.maxPlayers': 'अधिकतम खेलाडी',
+  'settings.bots': 'बोटहरू',
+  'settings.minBet': 'न्यूनतम बेट',
+  'settings.blindShowAfter': 'ब्लाइन्ड साओ पछि',
+  'settings.rounds': 'राउन्ड',
+  'settings.rajkapoor135': 'राजकपुर २-३-५',
+  'settings.special910Q': '९-१०-क्यू सबैभन्दा माथि',
+  'settings.save': 'सेटिङ्स सेभ',
+  
+  'spectator.title': 'दर्शक मोड',
+  'spectator.privacy': 'प्राइभेसी',
+  'spectator.private': 'निजी',
+  'spectator.public': 'सार्वजनिक',
+  'spectator.privateTip': 'निजी (दर्शक अनुमति छैन)',
+  'spectator.publicTip': 'सार्वजनिक (दर्शक अनुमति छ)',
+  'spectator.watchingNow': 'अहिले हेर्दै',
+  'spectator.limit': 'दर्शक सीमा',
+  'spectator.shareLink': 'लिङ्क सेयर',
+  'menu.title': 'मेनु',
+  'menu.home': 'होम',
+  'menu.profileStats': 'प्रोफाइल र तथ्याङ्क',
+  'menu.leaderboard': 'लीडरबोर्ड',
+  'menu.howToPlay': 'कसरी खेल्ने',
+  'menu.sound': 'ध्वनि',
+  'menu.soundOn': 'चालु',
+  'menu.soundOff': 'बन्द',
+  'menu.theme': 'थिम',
+  'menu.language': 'भाषा',
+  'menu.leftHanded': 'बायाँ हातको लागि लेआउट',
+  'menu.reduceMotion': 'मोसन कम गर्नुहोस्',
+  'menu.leaveGame': 'खेल छोड्नुहोस्',
+  'common.back': 'फर्कनुहोस्',
+  'common.leave': 'छोड्नुहोस्',
+  'confirm.leave.title': 'खेल छोड्ने?',
+  'confirm.leave.body': 'के तपाईँ खेल छोड्न चाहनुहुन्छ?',
+  'sideshow.noPending': 'कुनै साइड शो बाँकी छैन।',
+  'sideshow.onlyTwoActive': 'साइड शो २ सक्रिय खेलाडी बाँकी हुँदा मात्र उपलब्ध हुन्छ।',
+  'sideshow.invalidTarget': 'यो बेला साइड शो लक्ष्य मान्य छैन।',
+  'sideshow.unavailable': 'अहिले साइड शो उपलब्ध छैन।',
+  'seen.noShowWhileBlind': 'ब्लाइण्ड खेलाडी हुँदा सिनले साओ गर्न मिल्दैन। साइड शो प्रयोग गर्नुहोस्।',
+  'mention.youWereMentioned': '{name} ले तपाईँलाई उल्लेख गरे',
+  'join.playerJoined': '{name} खेलमा सहभागी भए!',
+  'game.startedGoodLuck': 'खेल सुरु भयो! शुभकामना!',
+  'youWon': 'तपाईँले {n} चिप्स जित्नुभयो!',
+  'playerWon': '{name} यो राउन्ड जिते',
+  'allPlayersReady': 'सबै खेलाडी तयार!',
+  'roundStarted': 'राउन्ड {n} सुरु भयो!',
+  'showingCards': '{name} पत्ता देखाउँदैछन्!',
+  'streak.broken': 'स्ट्रिक टुट्यो!',
+  'name.updated': 'नाम अपडेट भयो',
+  'leftHanded.enabled': 'बायाँ-हाते लेआउट सक्षम',
+  'leftHanded.disabled': 'बायाँ-हाते लेआउट अक्षम',
+  'density.set': 'घनत्व: {v}',
+  'motion.reduced': 'मोसन कम गरियो',
+  'motion.enabled': 'मोसन सक्षम',
+  'oneThumb.set': 'वान-थम्ब: {v}',
+  'privacy.cannotChange': 'खेल सुरु भएपछि प्राइभेसी परिवर्तन गर्न सकिँदैन',
+  'rematch.failed': 'रिम्याच सुरु गर्न असफल',
+  'cards.saw': 'तपाईँले पत्ता हेर्नुभयो!',
+  'turn.yourTurn': 'तपाईँको पालो! चाल चाल्नुहोस्',
+  'gesture.called': 'कल गरियो!',
+  'gesture.folded': 'फोल्ड भयो',
+  'gesture.raised': 'रेज गरियो!',
+  'help.title': 'कसरी खेल्ने',
+  'help.subtitle': 'टिन पत्ति गाइड',
+  'help.gameRules': 'खेलका नियम',
+  'help.rules.2to3': '२–३ खेलाडी: सुरु गर्न कम्तिमा २ जनाको आवश्यकता',
+  'help.rules.startingChips': 'सुरुआती चिप्स: प्रत्येकलाई १०००',
+  'help.rules.boot': 'बुट: प्रति खेलाडी १० चिप्स',
+  'help.rules.3cards': '३ पत्ता: प्रत्येक खेलाडीलाई ३',
+  'help.rules.blind': 'ब्लाइण्ड: बेटको ५०% तिर्नुहोस्',
+  'help.rules.seen': 'सिन: बेटको १००% तिर्नुहोस्',
+  'help.handRankings': 'ह्यान्ड रैंकिङ',
+  'hand.trail': 'ट्रेल',
+  'hand.pureSequence': 'प्योर सिक्वेन्स',
+  'hand.sequence': 'सिक्वेन्स',
+  'hand.color': 'कलर',
+  'hand.pair': 'पेयर',
+  'hand.highCard': 'हाइ कार्ड',
+  'help.actions': 'कार्यहरू',
+  'action.seeCards': 'पत्ता हेर्नुहोस्',
+  'help.proTips': 'प्रो टिप्स',
+  'tips.blindSave': 'सुरुमा चिप्स बचत गर्न ब्लाइण्ड खेल्नुहोस्',
+  'tips.seeWhenPotLarge': 'पोट ठूलो हुँदा पत्ता हेर्नुहोस्',
+  'tips.foldBad': 'नराम्रा ह्यान्ड छिट्टै फोल्ड गर्नुहोस्',
+  'tips.raiseStrong': 'मजबुत ह्यान्डमा रेज गर्नुहोस्',
+  'tips.useShow': 'आत्मविश्वास हुँदा साओ प्रयोग गर्नुहोस्',
+  'desc.seeCards': 'आफ्ना पत्ता खोल्नुहोस् (सिन खेलाडी बन्नुहोस्)',
+  'desc.call': 'हालको बेट मिलाउनुहोस्',
+  'desc.raise': 'बेट बढाउनुहोस् (२x वा ४x)',
+  'desc.fold': 'यो राउन्ड छोड्नुहोस्',
+  'desc.show': '२ खेलाडी हुँदा पत्ता तुलना',
+};
+
+const dicts: Record<Locale, Dictionary> = { en, ne };
+
+type I18nContextType = {
+  locale: Locale;
+  setLocale?: (l: Locale) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+};
+
+const I18nContext = createContext<I18nContextType>({
+  locale: 'en',
+  t: (key: string, vars?: Record<string, string | number>) => {
+    const base = en[key] || key;
+    if (!vars) return base;
+    return Object.keys(vars).reduce((acc, k) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(vars[k])), base);
+  },
+});
+
+export function I18nProvider({ locale, setLocale, children }: { locale: Locale; setLocale?: (l: Locale) => void; children: ReactNode }) {
+  const value = useMemo<I18nContextType>(() => {
+    const t = (key: string, vars?: Record<string, string | number>) => {
+      const table = dicts[locale] || en;
+      const base = table[key] || en[key] || key;
+      if (!vars) return base;
+      return Object.keys(vars).reduce((acc, k) => acc.replace(new RegExp(`\\{${k}\\}`, 'g'), String(vars[k])), base);
+    };
+    return { locale, setLocale, t };
+  }, [locale, setLocale]);
+  return React.createElement(I18nContext.Provider, { value }, children as any);
+}
+
+export const useI18n = () => useContext(I18nContext);
+
+import enTranslations from '@/locales/en.json';
+import neTranslations from '@/locales/ne.json';
+
+export type Language = 'en' | 'ne';
+
+export interface Translations {
+  [key: string]: any;
+}
+
+const translations: Record<Language, Translations> = {
+  en: enTranslations,
+  ne: neTranslations,
+};
+
+export function getTranslations(language: Language): Translations {
+  return translations[language] || translations.en;
+}
+
+export function getNestedTranslation(obj: any, path: string): string {
+  const keys = path.split('.');
+  let current = obj;
+  
+  for (const key of keys) {
+    if (current && typeof current === 'object' && key in current) {
+      current = current[key];
+    } else {
+      return path; // Return the path if translation not found
+    }
+  }
+  
+  return typeof current === 'string' ? current : path;
+}
+
+// Replace {{variable}} with actual values
+export function interpolate(text: string, vars?: Record<string, string | number>): string {
+  if (!vars) return text;
+  
+  return text.replace(/\{\{(\w+)\}\}/g, (match, key) => {
+    return vars[key]?.toString() || match;
+  });
+}
+
