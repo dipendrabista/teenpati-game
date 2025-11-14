@@ -15,6 +15,7 @@ import { PlayerCard } from '@/components/game/PlayerCard';
 import { MobileNav } from '@/components/game/MobileNav';
 import { TurnTimer } from '@/components/game/TurnTimer';
 import { WinnerCelebration } from '@/components/game/WinnerCelebration';
+import { HandHistory } from '@/components/game/HandHistory';
 import { RoundIndicator } from '@/components/game/RoundIndicator';
 import { LastAction } from '@/components/game/LastAction';
 import { EmojiReaction, ReactionContainer, type Reaction } from '@/components/game/EmojiReaction';
@@ -24,7 +25,8 @@ import { CompactStreak, StreakCelebration } from '@/components/game/StreakTracke
 import { GestureControls, KeyboardShortcuts } from '@/components/game/GestureControls';
 import { NudgeButton, NudgeOverlay } from '@/components/game/NudgeButton';
 import { GlobalNotificationFeed, type GlobalNotification } from '@/components/game/GlobalNotificationFeed';
-import { SideShow, SideShowIndicator } from '@/components/game/SideShow';
+import { SideShowEnhanced as SideShow } from '@/components/game/SideShowEnhanced';
+import { SideShowIndicator } from '@/components/game/SideShow';
 import { SpectatorMode, SpectatorBadge } from '@/components/game/SpectatorMode';
 import { VoiceChat, VoiceChatIndicator } from '@/components/game/VoiceChat';
 import { useSession } from 'next-auth/react';
@@ -135,6 +137,7 @@ export default function GameRoomPage() {
   const [callActive, setCallActive] = useState(false);
   const [showSpectatorDrawer, setShowSpectatorDrawer] = useState(false);
   const [suppressWinner, setSuppressWinner] = useState(false);
+  const [showHandHistory, setShowHandHistory] = useState(false);
   const [copiedSpectator, setCopiedSpectator] = useState(false);
   const [liveMessage, setLiveMessage] = useState('');
   const lastActionToastAtRef = useRef(0);
@@ -291,6 +294,27 @@ export default function GameRoomPage() {
         // Ignore game_started here to prevent duplicate toasts (handled on status change)
         if (message?.type === 'game_started') return;
       } catch {}
+    });
+
+    // Listen for voice call events
+    gameSocket.on('voice_call_started', ({ initiatorId, initiatorName }: { initiatorId: string; initiatorName: string }) => {
+      console.log('📞 Voice call started by', initiatorName);
+      setCallActive(true);
+      if (initiatorId !== playerId) {
+        toast.info(`📞 ${initiatorName} ${t('call.started')}`, {
+          duration: 3000,
+          description: t('call.clickToJoin')
+        });
+      }
+    });
+
+    gameSocket.on('voice_call_ended', ({ initiatorId }: { initiatorId: string }) => {
+      console.log('📞 Voice call ended');
+      setCallActive(false);
+      setShowVoiceChat(false);
+      if (initiatorId !== playerId) {
+        toast.info(t('call.ended'), { duration: 2000 });
+      }
     });
 
     // Listen for errors
@@ -2136,6 +2160,20 @@ export default function GameRoomPage() {
 
         {/* Settings Modal (admin only) - replaced by in-box drawer */}
 
+        {/* Hand History Button - Show when game finished */}
+        {gameState.status === 'finished' && !showHandHistory && (
+          <div className="fixed bottom-24 right-4 z-40">
+            <Button
+              onClick={() => setShowHandHistory(true)}
+              className="shadow-lg bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600"
+              size="lg"
+            >
+              <Trophy className="h-5 w-5 mr-2" />
+              {t('handHistory.title')}
+            </Button>
+          </div>
+        )}
+
         {/* Game Finished - Winner Celebration */}
         {gameState.status === 'finished' && gameState.winner && !suppressWinner && (
           <WinnerCelebration
@@ -2343,6 +2381,16 @@ export default function GameRoomPage() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Hand History Modal */}
+      {showHandHistory && gameState.status === 'finished' && gameState.winner && (
+        <HandHistory
+          players={gameState.players}
+          winner={gameState.winner}
+          actions={(gameState as any).actionHistory || []}
+          onClose={() => setShowHandHistory(false)}
+        />
+      )}
     </div>
     </I18nProvider>
   );

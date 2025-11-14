@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Timer, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useI18n } from '@/lib/i18n';
 
 interface TurnTimerProps {
   isMyTurn: boolean;
@@ -19,6 +20,7 @@ export function TurnTimer({
 }: TurnTimerProps) {
   const [timeRemaining, setTimeRemaining] = useState(initialRemaining);
   const [isWarning, setIsWarning] = useState(false);
+  const { t } = useI18n();
 
   useEffect(() => {
     setTimeRemaining(initialRemaining);
@@ -69,7 +71,7 @@ export function TurnTimer({
           
           <div className="flex flex-col items-start min-w-[60px]">
             <div className="text-xs font-medium opacity-75">
-              {isWarning ? 'Hurry!' : 'Your Turn'}
+              {isWarning ? t('turnTimer.hurry') : t('turnTimer.yourTurn')}
             </div>
             <div className="text-2xl font-bold leading-tight">
               {timeRemaining}s
@@ -108,7 +110,7 @@ export function TurnTimer({
             animate={{ opacity: 1 }}
             className="text-center mt-1 text-xs font-semibold text-red-600 dark:text-red-400"
           >
-            You will be auto-folded!
+            {t('turnTimer.autoFold')}
           </motion.div>
         )}
       </motion.div>

@@ -99,6 +99,9 @@ class TeenPatiGame {
     this.turnTimeout = 60; // seconds
     this.turnStartTime = null;
 
+    // Action history for hand history display
+    this.actionHistory = [];
+
     // Create game in database (skip if loading from database)
     if (!skipDbCreate) {
       // Check if game already exists
@@ -304,6 +307,7 @@ class TeenPatiGame {
     this.lastAction = null;
     this.sideShowChallenge = null;
     this.sideShowResults = null;
+    this.actionHistory = [];
     // Reset players
     this.players.forEach((p) => {
       p.isActive = true;
@@ -390,6 +394,16 @@ class TeenPatiGame {
 
       default:
         throw new Error('Unknown action');
+    }
+
+    // Track action in history (except SEE which was handled earlier)
+    if (action.type !== 'SEE' && actionResult) {
+      this.actionHistory.push({
+        playerId: playerId,
+        action: action.type.toLowerCase(),
+        amount: actionResult.amount || action.amount,
+        timestamp: new Date()
+      });
     }
 
     if (actionResult && !actionResult.gameEnded) {
@@ -976,6 +990,7 @@ class TeenPatiGame {
       rulesSpecial910Q: this.rulesSpecial910Q,
       turnTimeout: this.turnTimeout,
       turnTimeRemaining: this.getTurnTimeRemaining(),
+      actionHistory: this.actionHistory,
     };
   }
 }
@@ -1129,27 +1144,48 @@ app.prepare().then(() => {
         const me = game.players.find(p => p.id === game.currentTurn);
         if (!me || !me.isBot || game.status !== 'playing') return;
 
-        if (!me.hasSeen && Math.random() < 0.25) {
+        // Personality-based SEE decision
+        const personality = me.personality || 'conservative';
+        const seeChance = {
+          aggressive: 0.7,    // Aggressive bots see early
+          conservative: 0.15, // Conservative stay blind longer
+          bluffer: 0.4        // Bluffers mix it up
+        }[personality];
+        
+        if (!me.hasSeen && Math.random() < seeChance) {
           const resultSee = game.handlePlayerAction(me.id, { type: 'SEE' });
           io.to(gameId).emit('game_state', game.toJSON());
           io.to(gameId).emit('game_message', { type: 'player_move', playerId: me.id, data: resultSee, timestamp: new Date() });
           return scheduleNextBotAction(gameId);
         }
 
+        // Personality-based betting behavior
         const betMultiplier = me.hasSeen ? 2 : 1;
         const canCall = me.chips >= game.currentBet * betMultiplier;
         const rnd = Math.random();
         let move = { type: 'CALL' };
+        
         if (!canCall) {
           move = { type: 'FOLD' };
-        } else if (rnd < 0.15) {
-          move = { type: 'FOLD' };
-        } else if (rnd < 0.35) {
-          const minRaise = Math.max(game.currentBet * 2 * betMultiplier, game.minBet * betMultiplier * 2);
-          const raise = Math.min(me.chips, minRaise);
-          move = { type: 'RAISE', amount: raise };
         } else {
-          move = { type: 'CALL' };
+          // Personality determines fold/raise/call probabilities
+          const behaviors = {
+            aggressive: { fold: 0.05, raise: 0.60, call: 0.35 },    // Rarely folds, loves raising
+            conservative: { fold: 0.25, raise: 0.15, call: 0.60 },  // Cautious, mostly calls
+            bluffer: { fold: 0.10, raise: 0.50, call: 0.40 }        // Bluffs with raises
+          };
+          const behavior = behaviors[personality];
+          
+          if (rnd < behavior.fold) {
+            move = { type: 'FOLD' };
+          } else if (rnd < behavior.fold + behavior.raise) {
+            const minRaise = Math.max(game.currentBet * 2 * betMultiplier, game.minBet * betMultiplier * 2);
+            const maxRaise = personality === 'aggressive' ? me.chips : Math.min(me.chips, minRaise * 2);
+            const raise = Math.min(maxRaise, Math.max(minRaise, Math.floor(me.chips * (personality === 'aggressive' ? 0.4 : 0.2))));
+            move = { type: 'RAISE', amount: raise };
+          } else {
+            move = { type: 'CALL' };
+          }
         }
 
         const result = game.handlePlayerAction(me.id, move);
@@ -1300,10 +1336,19 @@ app.prepare().then(() => {
             const seat = game.seats.find(s => !s.playerId);
             if (!seat) break;
             const botId = `bot-${game.id}-${i+1}`;
+            const personalities = ['aggressive', 'conservative', 'bluffer'];
+            const personality = personalities[i % 3];
+            const personalityNames = {
+              aggressive: ['Raju', 'Sher', 'Veer'],
+              conservative: ['Shyam', 'Mohan', 'Gopal'],
+              bluffer: ['Dhyan', 'Chal', 'Maya']
+            };
+            const botName = personalityNames[personality][Math.floor(Math.random() * 3)];
             const bot = {
-              id: botId, name: `BOT ${i+1}`, chips: 1000, initialChips: 1000, isReady: true,
+              id: botId, name: `${botName} (Bot)`, chips: 1000, initialChips: 1000, isReady: true,
               position: seat.position, cards: [], hasSeen: true, hasFolded: false,
-              currentBet: 0, totalBet: 0, isActive: true, isBot: true, socketId: null
+              currentBet: 0, totalBet: 0, isActive: true, isBot: true, socketId: null,
+              personality: personality
             };
             game.players.push(bot);
             seat.playerId = botId;
@@ -1339,10 +1384,19 @@ app.prepare().then(() => {
             const seat = game.seats.find(s => !s.playerId);
             if (!seat) break;
             const botId = `bot-${game.id}-${i+1}`;
+            const personalities = ['aggressive', 'conservative', 'bluffer'];
+            const personality = personalities[i % 3];
+            const personalityNames = {
+              aggressive: ['Raju', 'Sher', 'Veer'],
+              conservative: ['Shyam', 'Mohan', 'Gopal'],
+              bluffer: ['Dhyan', 'Chal', 'Maya']
+            };
+            const botName = personalityNames[personality][Math.floor(Math.random() * 3)];
             const bot = {
-              id: botId, name: `BOT ${i+1}`, chips: 1000, initialChips: 1000, isReady: true,
+              id: botId, name: `${botName} (Bot)`, chips: 1000, initialChips: 1000, isReady: true,
               position: seat.position, cards: [], hasSeen: true, hasFolded: false,
-              currentBet: 0, totalBet: 0, isActive: true, isBot: true, socketId: null
+              currentBet: 0, totalBet: 0, isActive: true, isBot: true, socketId: null,
+              personality: personality
             };
             game.players.push(bot);
             seat.playerId = botId;
@@ -1454,10 +1508,19 @@ app.prepare().then(() => {
               if (!seat) break;
               const idx = existingBots + i + 1;
               const botId = `bot-${game.id}-${idx}`;
+              const personalities = ['aggressive', 'conservative', 'bluffer'];
+              const personality = personalities[(existingBots + i) % 3];
+              const personalityNames = {
+                aggressive: ['Raju', 'Sher', 'Veer'],
+                conservative: ['Shyam', 'Mohan', 'Gopal'],
+                bluffer: ['Dhyan', 'Chal', 'Maya']
+              };
+              const botName = personalityNames[personality][Math.floor(Math.random() * 3)];
               const bot = {
-                id: botId, name: `BOT ${idx}`, chips: 1000, initialChips: 1000, isReady: true,
+                id: botId, name: `${botName} (Bot)`, chips: 1000, initialChips: 1000, isReady: true,
                 position: seat.position, cards: [], hasSeen: true, hasFolded: false,
-                currentBet: 0, totalBet: 0, isActive: true, isBot: true, socketId: null
+                currentBet: 0, totalBet: 0, isActive: true, isBot: true, socketId: null,
+                personality: personality
               };
               game.players.push(bot);
               seat.playerId = botId;

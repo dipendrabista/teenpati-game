@@ -447,15 +447,7 @@ export function GameBoard({ gameState, currentPlayerId, onMove, uiDensity = 'com
             <div className="space-y-2 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
               {/* Left Column: Actions (See, Quick Bets, Primary Buttons) */}
               <div className="order-2 md:order-1">
-                {/* Turn timer (only on your turn) */}
-                {isMyTurn && gameState.status === "playing" && (
-                  <div className="mb-2 flex items-center gap-2">
-                    <TurnTimer duration={30} isActive={true} />
-                    <span className="text-[11px] text-gray-600 dark:text-gray-400">
-                      Your move
-                    </span>
-                  </div>
-                )}
+                {/* Turn timer moved to main page.tsx - removed duplicate */}
 
                 {/* Swipe hint (mobile only, once) */}
                 {isSmallScreen && showSwipeHint && (
@@ -685,7 +677,7 @@ export function GameBoard({ gameState, currentPlayerId, onMove, uiDensity = 'com
                   </div>
                 )}
 
-                {/* Info row: your stack, to call, pot, bet */}
+                {/* Info row: your stack, to call, pot, bet, pot odds */}
                 <div className="mb-2 grid grid-cols-2 gap-1 text-[11px] text-gray-700 dark:text-gray-300">
                   <div
                     className={`rounded-md border px-2 py-1 bg-white/70 dark:bg-gray-900/50 ${
@@ -713,25 +705,44 @@ export function GameBoard({ gameState, currentPlayerId, onMove, uiDensity = 'com
                   </div>
                 </div>
 
-                {/* Pot odds */}
-                {minCallAmount > 0 && (
-                  <div className="mb-2 text-[11px] text-gray-600 dark:text-gray-400">
-                    {(() => {
-                      const toCall = Math.max(minCallAmount, 0);
-                      const pot = Math.max(gameState.pot, 0);
-                      const odds =
-                        toCall > 0
-                          ? Math.round((toCall / (pot + toCall)) * 100)
-                          : 0;
-                      return (
-                        <span>
-                          Pot odds:{" "}
-                          <span className="font-semibold">{odds}%</span>
-                        </span>
-                      );
-                    })()}
+                {/* Pot Odds Display */}
+                {minCallAmount > 0 && canBet && (
+                  <div className="mb-2 rounded-lg border-2 px-3 py-2 bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 border-blue-300 dark:border-blue-700">
+                    <div className="flex items-center justify-between text-xs">
+                      <div>
+                        <div className="font-semibold text-blue-700 dark:text-blue-300">
+                          {t("potOdds.title")}
+                        </div>
+                        <div className="text-[10px] text-gray-600 dark:text-gray-400 mt-0.5">
+                          Call {minCallAmount} to win {gameState.pot + minCallAmount}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={`text-lg font-bold ${
+                            gameState.pot > minCallAmount * 2
+                              ? "text-green-600 dark:text-green-400"
+                              : gameState.pot > minCallAmount
+                              ? "text-yellow-600 dark:text-yellow-400"
+                              : "text-red-600 dark:text-red-400"
+                          }`}
+                        >
+                          {minCallAmount > 0
+                            ? `${((gameState.pot / minCallAmount) * 100).toFixed(0)}%`
+                            : "N/A"}
+                        </div>
+                        <div className="text-[10px] text-gray-600 dark:text-gray-400">
+                          {gameState.pot > minCallAmount * 2
+                            ? t("potOdds.good")
+                            : gameState.pot > minCallAmount
+                            ? t("potOdds.fair")
+                            : t("potOdds.risky")}
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 )}
+
 
                 {/* Primary Action Buttons (segmented) */}
                 <div
